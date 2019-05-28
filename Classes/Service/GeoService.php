@@ -41,7 +41,7 @@ class GeoService
     /**
      * @var int
      */
-    protected $cacheTime = 7776000;    // 90 days
+    protected $cacheTime = 7776000; // 90 days
 
     /**
      * @var int
@@ -62,7 +62,7 @@ class GeoService
      */
     public function __construct($apiKey = null)
     {
-        $geoCodingConfig = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['geocoding'] ?: unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['geocoding']);
+        $geoCodingConfig = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['geocoding'] ?: unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['geocoding'], ['allowed_classes' => 'none']);
         // load from extension configuration
         if ($apiKey === null) {
             $apiKey = $geoCodingConfig['googleApiKey'] ?: '';
@@ -77,14 +77,13 @@ class GeoService
      * core functionality: asks google for the coordinates of an address
      * stores known addresses in a local cache.
      *
-     * @param $street
-     * @param $zip
-     * @param $city
-     * @param $country
-     *
+     * @param string $street
+     * @param string $zip
+     * @param string $city
+     * @param string $country
      * @return array an array with latitude and longitude
      */
-    public function getCoordinatesForAddress($street = null, $zip = null, $city = null, $country = 'Germany'): array
+    public function getCoordinatesForAddress(string $street = null, string $zip = null, string $city = null, string $country = 'Germany'): array
     {
         $addressParts = [];
         foreach ([$street, $zip . ' ' . $city, $country] as $addressPart) {
@@ -142,14 +141,14 @@ class GeoService
      * @return int
      */
     public function calculateCoordinatesForAllRecordsInTable(
-        $tableName,
-        $latitudeField = 'latitude',
-        $longitudeField = 'longitude',
-        $streetField = 'street',
-        $zipField = 'zip',
-        $cityField = 'city',
-        $countryField = 'country',
-        $addWhereClause = ''
+        string $tableName,
+        string $latitudeField = 'latitude',
+        string $longitudeField = 'longitude',
+        string $streetField = 'street',
+        string $zipField = 'zip',
+        string $cityField = 'city',
+        string $countryField = 'country',
+        string $addWhereClause = ''
     ): int
     {
         // Fetch all records without latitude/longitude
@@ -183,9 +182,9 @@ class GeoService
             foreach ($records as $record) {
                 $country = $record[$countryField];
                 // resolve the label for the country
-                if ($GLOBALS['TCA'][$tableName]['columns'][$countryField]['config']['type'] == 'select') {
+                if ($GLOBALS['TCA'][$tableName]['columns'][$countryField]['config']['type'] === 'select') {
                     foreach ($GLOBALS['TCA'][$tableName]['columns'][$countryField]['config']['items'] as $itm) {
-                        if ($itm[1] == $country) {
+                        if ($itm[1] === $country) {
                             if (is_object($GLOBALS['TSFE'])) {
                                 $country = $GLOBALS['TSFE']->sL($itm[0]);
                             } else {
@@ -194,7 +193,7 @@ class GeoService
                         }
                     }
                 }
-                    // do the geocoding
+                // do the geocoding
                 if (!empty($record[$zipField]) || !empty($record[$cityField])) {
                     $coords = $this->getCoordinatesForAddress($record[$streetField], $record[$zipField], $record[$cityField], $country);
                     if ($coords) {
@@ -241,7 +240,7 @@ class GeoService
     {
         $response = GeneralUtility::getUrl($url);
         $result = json_decode($response, true);
-        if ($result['status'] !== 'OVER_QUERY_LIMIT' || $remainingTries <= 0) {
+        if ($remainingTries < 1 || $result['status'] !== 'OVER_QUERY_LIMIT') {
             return $result;
         }
         return $this->getApiCallResult($url, $remainingTries - 1);

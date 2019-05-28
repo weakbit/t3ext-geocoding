@@ -10,6 +10,7 @@
 // writing. "version" and "dependencies" must not be touched!
 //#######################################################################
 
+/** @noinspection PhpUndefinedVariableInspection */
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Service: Geocoding via Google Maps',
     'description' => 'Provides services for google maps GeoCoding API and radius search on the database.',
