@@ -38,7 +38,7 @@ class RadiusService
      * earth radius in kilometers.
      * @var int
      */
-    protected $earthRadius = 6378.1;
+    protected const EARTH_RADIUS = 6378.1;
 
     /**
      * calculates the distance in kilometers between two coordinates.
@@ -50,7 +50,6 @@ class RadiusService
      */
     public function getDistance($coordinates1, $coordinates2): float
     {
-
         // new formula, taken from here: http://snipplr.com/view.php?codeview&id=2531
         $pi80 = M_PI / 180;
         $lat1 = $coordinates1['latitude'] * $pi80;
@@ -62,7 +61,7 @@ class RadiusService
         $distanceLongitude = $lng2 - $lng1;
         $a = sin($distanceLatitude / 2) * sin($distanceLatitude / 2) + cos($lat1) * cos($lat2) * sin($distanceLongitude / 2) * sin($distanceLongitude / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        return $this->earthRadius * $c;
+        return static::EARTH_RADIUS * $c;
     }
 
     /**
@@ -83,7 +82,7 @@ class RadiusService
         $fields = GeneralUtility::trimExplode(',', 'uid,' . $additionalFields, true);
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tableName);
 
-        $distanceSqlCalc = 'ACOS(SIN(RADIANS(' . $queryBuilder->quoteIdentifier($latitudeField) . ')) * SIN(RADIANS(' . (float)$coordinates['latitude'] . ')) + COS(RADIANS(' . $queryBuilder->quoteIdentifier($latitudeField) . ')) * COS(RADIANS(' . (float)$coordinates['latitude'] . ')) * COS(RADIANS(' . $queryBuilder->quoteIdentifier($longitudeField) . ') - RADIANS(' . (float)$coordinates['longitude'] . '))) * ' . $this->earthRadius;
+        $distanceSqlCalc = 'ACOS(SIN(RADIANS(' . $queryBuilder->quoteIdentifier($latitudeField) . ')) * SIN(RADIANS(' . (float)$coordinates['latitude'] . ')) + COS(RADIANS(' . $queryBuilder->quoteIdentifier($latitudeField) . ')) * COS(RADIANS(' . (float)$coordinates['latitude'] . ')) * COS(RADIANS(' . $queryBuilder->quoteIdentifier($longitudeField) . ') - RADIANS(' . (float)$coordinates['longitude'] . '))) * ' . static::EARTH_RADIUS;
 
         return $queryBuilder
             ->select(...$fields)
