@@ -69,15 +69,17 @@ class RadiusService
      * see http://spinczyk.net/blog/2009/10/04/radius-search-with-google-maps-and-mysql/.
      *
      * @param array $coordinates an associative array with "latitude" and "longitude" keys
-     * @param int $maxDistance the radius in kilometers
+     * @param int $minDistance the minimum radius in kilometers
+     * @param int $maxDistance the maximum radius in kilometers
      * @param string $tableName the DB table that should be queried
      * @param string $latitudeField the DB field that holds the latitude coordinates
      * @param string $longitudeField the DB field that holds the longitude coordinates
      * @param string $additionalFields additional fields to be selected from the table (uid is always selected)
+     * @param array $additionalWhereExpressions
      *
      * @return array
      */
-    public function findAllDatabaseRecordsInRadius(array $coordinates, int $maxDistance = 250, string $tableName = 'pages', string $latitudeField = 'latitude', string $longitudeField = 'longitude', string $additionalFields = ''): array
+    public function findAllDatabaseRecordsInRadius(array $coordinates, int $minDistance = 0, int $maxDistance = 250, string $tableName = 'pages', string $latitudeField = 'latitude', string $longitudeField = 'longitude', string $additionalFields = '', array $additionalWhereExpressions): array
     {
         $fields = GeneralUtility::trimExplode(',', 'uid,' . $additionalFields, true);
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tableName);
@@ -91,7 +93,12 @@ class RadiusService
             )
             ->from($tableName)
             ->where(
-                $queryBuilder->expr()->comparison($distanceSqlCalc, ExpressionBuilder::LT, $maxDistance)
+                $queryBuilder->expr()->andX(
+                    ...array_merge([
+                        $queryBuilder->expr()->comparison($distanceSqlCalc, ExpressionBuilder::LTE, $maxDistance),
+                        $queryBuilder->expr()->comparison($distanceSqlCalc, ExpressionBuilder::GTE, $minDistance)
+                    ], $additionalWhereExpressions))
+
             )
             ->orderBy('distance')
             ->execute()
